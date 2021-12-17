@@ -27,32 +27,7 @@ fact "Nao se pode ter efeito colateral sem tomar vacina" {
     all v: Vacinados | all n: Nome | v.colaterais[n] != none implies v.primeiraDose[n] != none
 }
 
-//Retorna a quantidade de pessoas que receberam a primeira dose do tipo passado pelo parametro
-fun primeiraDoseAplicada(v: Vacina): Int{
-    #(~(Vacinados.primeiraDose)[v])
-}
-
-//Pessoa tomou dose extra
-pred pessoaTomouDoseExtra(n: Nome){
-Pfizer in Vacinados.doseExtra[n]
-}
-
-//Retorna se a pessoa 'n' tomou vacina 'v'
-pred pessoaVacinada(n: Nome, vac: Vacina){
-	all v: Vacinados | v.primeiraDose[n] = vac or v.segundaDose[n] = vac
-}
-
-//Retorna se pessoa 'n' teve efeito colateral 'col'
-pred pessoaEfeitoColateral(n: Nome, col: EfeitoColateral){
-	all v: Vacinados | col in v.colaterais[n]
-}
-
-//Retorna se a vacina 'v' causou efeitor colateral 'col'
-pred vacinaEfeitoColateral(vac: Vacina, col: EfeitoColateral){
-	all v: Vacinados | all n: Nome | vac in v.primeiraDose[n] and col in v.colaterais[n]
-}
-
-
+// Asserts
 
 //Verifica se a primeira é igual a segunda
 assert primeiraIgualSegunda {
@@ -75,7 +50,98 @@ assert verificaEfeitoColateralSemVacina{
 	all v: Vacinados | all n: Nome | #v.colaterais[n] > 0 implies v.primeiraDose[n] in Vacina
 }
 
+//Definição de predicados
+
+//Verifica se pessoa 'n' tomou dose extra
+pred pessoaTomouDoseExtra(n: Nome){
+	Pfizer in Vacinados.doseExtra[n]
+}
+
+//Retorna se a pessoa 'n' tomou vacina 'v'
+pred pessoaVacinada(n: Nome, vac: Vacina){
+	all v: Vacinados | v.primeiraDose[n] = vac or v.segundaDose[n] = vac
+}
+
+//Verifica se pessoa 'n' teve efeito colateral 'col'
+pred pessoaEfeitoColateral(n: Nome, col: EfeitoColateral){
+	all v: Vacinados | col in v.colaterais[n]
+}
+
+//Verifica se a vacina 'v' causou efeito colateral 'col'
+pred vacinaEfeitoColateral(vac: Vacina, col: EfeitoColateral){
+	all v: Vacinados | all n: Nome | vac in v.primeiraDose[n] and col in v.colaterais[n]
+}
+
+// Verifica se a pessoa 'n' tomou Janssen
+pred tomouJanssen(n: Nome) {
+	all v:Vacinados | v.primeiraDose[n] = Janssen
+}
+
+// Verifica se pessoa 'n' tomou segunda dose 
+pred tomouSegundaDose(n: Nome){
+	all v:Vacinados | v.segundaDose[n] != none
+}
+
+// Verifica se pessoa 'n' pode tomar a dose extra
+pred podeTomarDoseExtra(n: Nome) {
+	tomouJanssen[n] or tomouSegundaDose[n] and !pessoaTomouDoseExtra[n]
+}
+
+//  Verifica se ao menos 1 pessoa tomou uma determinada Vacina 'vac'
+pred verificaSeVacinaFoiTomada(vac: Vacina) {
+	all v: Vacinados | vac in v.primeiraDose[Nome] or v.doseExtra[Nome] = vac
+}
+
+// Verifica se pessoa 'n' pode ou não tomar a primeira dose
+pred podeTomarPrimeiraDose(n:Nome){
+	all v:Vacinados | v.primeiraDose[n] = none
+}
+
+// Verifica se pessoa 'n' pode ou não tomar a segunda dose
+pred podeTomarSegundaDose(n:Nome, vac:Vacina){
+	all v:Vacinados | !tomouJanssen[n] and  !tomouSegundaDose[n] and v.primeiraDose[n] = vac
+}
+
 pred show () {}
 
+//Retorna a quantidade de pessoas que receberam a primeira dose do tipo passado pelo parametro
+fun primeiraDoseAplicada(v: Vacina): Int {
+    #(~(Vacinados.primeiraDose)[v])
+}
+
+fun listarNomesPrimeiraDose(): set Nome {
+	~(Vacinados.primeiraDose)[Vacina]
+}
+
+fun listarNomesDuasDose(): set Nome {
+	~(Vacinados.primeiraDose)[Vacina] & ~(Vacinados.segundaDose)[Vacina]
+}
+
+fun listarPessoasTomaramVacina(v: Vacina): set Nome {
+	~(Vacinados.primeiraDose)[v] + ~(Vacinados.segundaDose)[v] + ~(Vacinados.doseExtra)[v]
+}
+
+fun quantasPessoasTomaramDoseExtra(): Int {
+	#(~(Vacinados.doseExtra)[Vacina])
+}
+
+fun quantasPessoasPrecisamDoseExtra(): Int {
+	#((~(Vacinados.segundaDose)[Vacina] + ~(Vacinados.primeiraDose)[Janssen]) - (~(Vacinados.doseExtra)[Pfizer]))
+}
+//fun necessitamSegundaDose() {}
+
+//Definição de 4 operações que simulem o comportamento do sistema;
+pred addPrimeiraDose(v, vc: Vacinados, n: Nome, vac: Vacina) {
+	vc.primeiraDose = v.primeiraDose + n -> vac
+}
+
+pred addSegundaDose(v, vc: Vacinados, n: Nome, vac: Vacina) {
+	vc.segundaDose = v.segundaDose + n -> vac
+}
+
+pred addDoseExtra(v, vc: Vacinados, n: Nome) {
+	vc.doseExtra = v.doseExtra + n -> Pfizer
+}
+
 //check verificaEfeitoColateralSemVacina for 15
-run pessoaEfeitoColateral for 15
+run podeTomarSegundaDose for 15
