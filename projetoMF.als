@@ -128,11 +128,13 @@ fun quantasPessoasTomaramDoseExtra(): Int {
 fun quantasPessoasPrecisamDoseExtra(): Int {
 	#((~(Vacinados.segundaDose)[Vacina] + ~(Vacinados.primeiraDose)[Janssen]) - (~(Vacinados.doseExtra)[Pfizer]))
 }
-//fun necessitamSegundaDose() {}
 
-//Definição de 4 operações que simulem o comportamento do sistema;
 pred addPrimeiraDose(v, vc: Vacinados, n: Nome, vac: Vacina) {
 	vc.primeiraDose = v.primeiraDose + n -> vac
+}
+
+fun listaEfeitosColateraisPorPessoa(v: Vacinados, n: Nome): Nome -> set EfeitoColateral {
+	n <: v.colaterais
 }
 
 pred addSegundaDose(v, vc: Vacinados, n: Nome, vac: Vacina) {
